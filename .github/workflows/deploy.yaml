@@ -4,6 +4,12 @@ on:
   push:
     branches: [main]
   workflow_dispatch:
+    inputs:
+      deploy_only:
+        description: 'Skip build, deploy existing images'
+        required: false
+        default: 'false'
+        type: boolean
 
 env:
   REGISTRY: ghcr.io
@@ -11,7 +17,9 @@ env:
 
 jobs:
   build:
+    name: Build Image
     runs-on: ubuntu-latest
+    if: ${{ github.event.inputs.deploy_only != 'true' }}
     permissions:
       contents: read
       packages: write
@@ -48,3 +56,58 @@ jobs:
           labels: ${{ steps.meta.outputs.labels }}
           cache-from: type=gha
           cache-to: type=gha,mode=max
+
+  deploy:
+    name: Deploy to Kubernetes
+    runs-on: self-hosted
+    needs: [build]
+    if: |
+      always() &&
+      (needs.build.result == 'success' || needs.build.result == 'skipped')
+    environment: production
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Install Helm
+        run: |
+          if ! command -v helm &> /dev/null; then
+            curl https://raw.githubusercontent.com/helm/helm/main/scripts/get-helm-3 | bash
+          fi
+          helm version
+
+      - name: Create namespace
+        run: kubectl create ns staemme --dry-run=client -o yaml | kubectl apply -f -
+
+      - name: Create GHCR pull secret
+        run: |
+          kubectl create secret docker-registry ghcr-secret \
+            --docker-server=ghcr.io \
+            --docker-username=${{ github.actor }} \
+            --docker-password=${{ secrets.GH_TOKEN }} \
+            -n staemme --dry-run=client -o yaml | kubectl apply -f -
+
+      - name: Create basic auth secret
+        run: |
+          kubectl create secret generic staemme-basic-auth \
+            --from-literal=auth="${{ secrets.BASIC_AUTH_HTPASSWD }}" \
+            -n staemme --dry-run=client -o yaml | kubectl apply -f -
+
+      - name: Deploy with Helm
+        run: |
+          SHORT_SHA=$(echo "${{ github.sha }}" | cut -c1-7)
+          helm upgrade --install staemme ./helm/staemme \
+            -n staemme \
+            --set image.tag=sha-${SHORT_SHA}
+
+      - name: Verify deployment
+        run: |
+          echo "=== Pod Status ==="
+          kubectl get pods -n staemme
+          echo ""
+          echo "=== Service Status ==="
+          kubectl get svc -n staemme
+          echo ""
+          echo "=== Ingress Status ==="
+          kubectl get ingress -n staemme
