@@ -67,6 +67,7 @@ RUN pip install --no-cache-dir . && \
 # Install patchright Chromium browser
 RUN patchright install chromium && \
     # Move browser to a shared location accessible by staemme user
+    mkdir -p /home/staemme/.cache && \
     cp -r /root/.cache/ms-playwright /home/staemme/.cache/ms-playwright && \
     chown -R staemme:staemme /home/staemme/.cache
 
