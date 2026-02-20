@@ -1,0 +1,57 @@
+[server]
+world = "de250"
+
+[bot]
+active_hours = "00:00-23:59"
+active_delay = [120, 300]
+inactive_delay = [600, 1200]
+
+[building]
+enabled = true
+template = "templates/early_game.toml"
+
+[farming]
+enabled = true
+radius = 15
+stop_on_attack = true
+lc_threshold = 20
+
+[farming.template_a]
+spear = 10
+light = 5
+
+[farming.template_b]
+spear = 25
+sword = 15
+light = 10
+ram = 2
+
+[farming.min_reserve]
+spear = 50
+
+[scavenging]
+enabled = true
+mode = "ratio"
+target_minutes = 120
+dry_run = false
+
+[scavenging.option_ratios]
+1 = 2.5
+2 = 1.0
+
+[troops]
+enabled = true
+mode = "fill_scavenge"
+fill_units = ["spear"]
+
+[troops.targets]
+spear = 500
+sword = 300
+light = 200
+ram = 50
+
+[humanizer]
+delay_range = [3.0, 8.0]
+jitter_factor = 0.3
+long_pause_chance = 0.05
+long_pause_range = [15.0, 45.0]

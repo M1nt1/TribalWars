@@ -1,0 +1,14 @@
+apiVersion: v2
+name: staemme
+description: Die Stamme (Tribal Wars) automation bot — cloud-native deployment
+version: 1.0.0
+appVersion: "1.0.0"
+type: application
+
+keywords:
+  - tribal-wars
+  - automation
+  - bot
+
+maintainers:
+  - name: staemme

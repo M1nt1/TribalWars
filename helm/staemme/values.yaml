@@ -1,0 +1,151 @@
+# Default values for staemme bot Helm chart.
+
+# -- Bot profiles to deploy. Each profile creates its own Deployment + PVC.
+profiles:
+  - name: de250
+    world: de250
+    # credentials:
+    #   username: ""
+    #   password: ""
+
+# -- Container image settings
+image:
+  repository: staemme-bot
+  tag: latest
+  pullPolicy: IfNotPresent
+
+# -- Image pull secrets (for private registries)
+imagePullSecrets: []
+
+# -- Resource requests and limits per pod
+# Chromium uses 200-500MB idle, spikes to 800MB during page loads
+resources:
+  requests:
+    memory: "512Mi"
+    cpu: "250m"
+  limits:
+    memory: "1536Mi"
+    cpu: "1000m"
+
+# -- API server port inside the container
+apiPort: 8000
+
+# -- VNC settings for remote browser access (login / CAPTCHA)
+vnc:
+  enabled: true
+  port: 5900
+  # -- VNC password (empty = no auth)
+  password: ""
+
+# -- Xvfb virtual display settings
+display:
+  number: 99
+  resolution: "1280x720x24"
+
+# -- Persistent storage for bot data (session, DB, build queues, toggles)
+persistence:
+  enabled: true
+  storageClass: ""
+  size: 1Gi
+  accessMode: ReadWriteOnce
+
+# -- Service settings
+service:
+  type: ClusterIP
+  port: 8000
+  # -- Additional ports to expose on the service
+  vncPort: 5900
+
+# -- Ingress for web dashboard + API access
+ingress:
+  enabled: false
+  className: ""
+  annotations: {}
+    # kubernetes.io/ingress.class: nginx
+    # cert-manager.io/cluster-issuer: letsencrypt
+  hosts:
+    - host: staemme.local
+      paths:
+        - path: /
+          pathType: Prefix
+  tls: []
+  #  - secretName: staemme-tls
+  #    hosts:
+  #      - staemme.local
+
+# -- Bot configuration (TOML) — merged into ConfigMap
+# Override per-profile using profiles[].config
+botConfig: |
+  [server]
+  world = "de250"
+
+  [bot]
+  active_hours = "06:00-23:00"
+  active_delay = [120, 300]
+  inactive_delay = [600, 1200]
+
+  [browser]
+  headless_mode = "xvfb"
+  viewport_width = 1280
+  viewport_height = 720
+
+  [api]
+  enabled = true
+  host = "0.0.0.0"
+  port = 8000
+
+  [building]
+  enabled = false
+
+  [farming]
+  enabled = false
+  lc_threshold = 20
+
+  [scavenging]
+  enabled = false
+  mode = "ratio"
+
+  [troops]
+  enabled = false
+  mode = "fill_scavenge"
+
+# -- Building template (TOML)
+buildingTemplate: ""
+
+# -- Health check / liveness probe
+livenessProbe:
+  httpGet:
+    path: /api/health
+    port: api
+  initialDelaySeconds: 60
+  periodSeconds: 30
+  timeoutSeconds: 5
+  failureThreshold: 3
+
+# -- Readiness probe
+readinessProbe:
+  httpGet:
+    path: /api/health
+    port: api
+  initialDelaySeconds: 30
+  periodSeconds: 10
+  timeoutSeconds: 5
+  failureThreshold: 3
+
+# -- Pod annotations
+podAnnotations: {}
+
+# -- Pod security context
+podSecurityContext: {}
+
+# -- Container security context
+securityContext: {}
+
+# -- Node selector
+nodeSelector: {}
+
+# -- Tolerations
+tolerations: []
+
+# -- Affinity rules
+affinity: {}

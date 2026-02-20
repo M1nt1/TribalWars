@@ -1,0 +1,21 @@
+{{- range $profile := .Values.profiles }}
+---
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: {{ include "staemme.profileName" (dict "Release" $.Release "profile" $profile) }}-config
+  labels:
+    {{- include "staemme.labels" $ | nindent 4 }}
+    staemme/profile: {{ $profile.name }}
+data:
+  config.toml: |
+    {{- if $profile.config }}
+    {{ $profile.config | nindent 4 }}
+    {{- else }}
+    {{ $.Values.botConfig | nindent 4 }}
+    {{- end }}
+  {{- if $.Values.buildingTemplate }}
+  building_template.toml: |
+    {{ $.Values.buildingTemplate | nindent 4 }}
+  {{- end }}
+{{- end }}

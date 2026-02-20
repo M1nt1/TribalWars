@@ -1,0 +1,21 @@
+{{- if .Values.persistence.enabled }}
+{{- range $profile := .Values.profiles }}
+---
+apiVersion: v1
+kind: PersistentVolumeClaim
+metadata:
+  name: {{ include "staemme.profileName" (dict "Release" $.Release "profile" $profile) }}-data
+  labels:
+    {{- include "staemme.labels" $ | nindent 4 }}
+    staemme/profile: {{ $profile.name }}
+spec:
+  accessModes:
+    - {{ $.Values.persistence.accessMode }}
+  {{- if $.Values.persistence.storageClass }}
+  storageClassName: {{ $.Values.persistence.storageClass | quote }}
+  {{- end }}
+  resources:
+    requests:
+      storage: {{ $.Values.persistence.size }}
+{{- end }}
+{{- end }}

@@ -1,0 +1,26 @@
+{{- range $profile := .Values.profiles }}
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: {{ include "staemme.profileName" (dict "Release" $.Release "profile" $profile) }}
+  labels:
+    {{- include "staemme.labels" $ | nindent 4 }}
+    staemme/profile: {{ $profile.name }}
+spec:
+  type: {{ $.Values.service.type }}
+  ports:
+    - name: api
+      port: {{ $.Values.service.port }}
+      targetPort: api
+      protocol: TCP
+    {{- if $.Values.vnc.enabled }}
+    - name: vnc
+      port: {{ $.Values.service.vncPort }}
+      targetPort: vnc
+      protocol: TCP
+    {{- end }}
+  selector:
+    {{- include "staemme.selectorLabels" $ | nindent 4 }}
+    staemme/profile: {{ $profile.name }}
+{{- end }}

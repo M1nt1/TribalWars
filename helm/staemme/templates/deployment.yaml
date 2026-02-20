@@ -1,0 +1,141 @@
+{{- range $profile := .Values.profiles }}
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: {{ include "staemme.profileName" (dict "Release" $.Release "profile" $profile) }}
+  labels:
+    {{- include "staemme.labels" $ | nindent 4 }}
+    staemme/profile: {{ $profile.name }}
+spec:
+  # One browser session per profile — no scaling, no rolling update
+  replicas: 1
+  strategy:
+    type: Recreate
+  selector:
+    matchLabels:
+      {{- include "staemme.selectorLabels" $ | nindent 6 }}
+      staemme/profile: {{ $profile.name }}
+  template:
+    metadata:
+      labels:
+        {{- include "staemme.selectorLabels" $ | nindent 8 }}
+        staemme/profile: {{ $profile.name }}
+      {{- with $.Values.podAnnotations }}
+      annotations:
+        {{- toYaml . | nindent 8 }}
+      {{- end }}
+    spec:
+      {{- with $.Values.imagePullSecrets }}
+      imagePullSecrets:
+        {{- toYaml . | nindent 8 }}
+      {{- end }}
+      {{- with $.Values.podSecurityContext }}
+      securityContext:
+        {{- toYaml . | nindent 8 }}
+      {{- end }}
+      # Graceful shutdown: call /api/control/stop before SIGTERM
+      terminationGracePeriodSeconds: 30
+      containers:
+        - name: staemme
+          image: "{{ $.Values.image.repository }}:{{ $.Values.image.tag }}"
+          imagePullPolicy: {{ $.Values.image.pullPolicy }}
+          ports:
+            - name: api
+              containerPort: {{ $.Values.apiPort }}
+              protocol: TCP
+            {{- if $.Values.vnc.enabled }}
+            - name: vnc
+              containerPort: {{ $.Values.vnc.port }}
+              protocol: TCP
+            {{- end }}
+          env:
+            - name: PROFILE
+              value: {{ $profile.name | quote }}
+            - name: API_PORT
+              value: {{ $.Values.apiPort | quote }}
+            - name: DISPLAY_NUM
+              value: {{ $.Values.display.number | quote }}
+            - name: SCREEN_RESOLUTION
+              value: {{ $.Values.display.resolution | quote }}
+            - name: VNC_ENABLED
+              value: {{ $.Values.vnc.enabled | quote }}
+            - name: VNC_PORT
+              value: {{ $.Values.vnc.port | quote }}
+            {{- if $.Values.vnc.password }}
+            - name: VNC_PASSWORD
+              value: {{ $.Values.vnc.password | quote }}
+            {{- end }}
+            {{- if and $profile.credentials $profile.credentials.username }}
+            - name: GAME_USERNAME
+              valueFrom:
+                secretKeyRef:
+                  name: {{ include "staemme.profileName" (dict "Release" $.Release "profile" $profile) }}-credentials
+                  key: username
+            - name: GAME_PASSWORD
+              valueFrom:
+                secretKeyRef:
+                  name: {{ include "staemme.profileName" (dict "Release" $.Release "profile" $profile) }}-credentials
+                  key: password
+            {{- end }}
+          {{- with $.Values.livenessProbe }}
+          livenessProbe:
+            {{- toYaml . | nindent 12 }}
+          {{- end }}
+          {{- with $.Values.readinessProbe }}
+          readinessProbe:
+            {{- toYaml . | nindent 12 }}
+          {{- end }}
+          resources:
+            {{- toYaml $.Values.resources | nindent 12 }}
+          {{- with $.Values.securityContext }}
+          securityContext:
+            {{- toYaml . | nindent 12 }}
+          {{- end }}
+          # Graceful shutdown via API before pod termination
+          lifecycle:
+            preStop:
+              exec:
+                command:
+                  - /bin/sh
+                  - -c
+                  - "curl -s -X POST http://localhost:{{ $.Values.apiPort }}/api/control/stop; sleep 5"
+          volumeMounts:
+            # Persistent data (session, DB, build queues, toggle states)
+            {{- if $.Values.persistence.enabled }}
+            - name: data
+              mountPath: /app/data/{{ $profile.name }}
+            {{- end }}
+            # Config from ConfigMap
+            - name: config
+              mountPath: /app/config/{{ $profile.name }}.toml
+              subPath: config.toml
+              readOnly: true
+            {{- if $.Values.buildingTemplate }}
+            - name: config
+              mountPath: /app/config/templates/building.toml
+              subPath: building_template.toml
+              readOnly: true
+            {{- end }}
+      volumes:
+        {{- if $.Values.persistence.enabled }}
+        - name: data
+          persistentVolumeClaim:
+            claimName: {{ include "staemme.profileName" (dict "Release" $.Release "profile" $profile) }}-data
+        {{- end }}
+        - name: config
+          configMap:
+            name: {{ include "staemme.profileName" (dict "Release" $.Release "profile" $profile) }}-config
+      {{- with $.Values.nodeSelector }}
+      nodeSelector:
+        {{- toYaml . | nindent 8 }}
+      {{- end }}
+      {{- with $.Values.tolerations }}
+      tolerations:
+        {{- toYaml . | nindent 8 }}
+      {{- end }}
+      {{- with $.Values.affinity }}
+      affinity:
+        {{- toYaml . | nindent 8 }}
+      {{- end }}
+{{- end }}

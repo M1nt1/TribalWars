@@ -1,0 +1,49 @@
+# Sequential build order
+mode = "sequential"
+
+# HQ to 10 (6+7 already in queue)
+[[steps]]
+building = "main"
+level = 8
+
+[[steps]]
+building = "main"
+level = 9
+
+[[steps]]
+building = "main"
+level = 10
+
+# Barracks to 5
+[[steps]]
+building = "barracks"
+level = 2
+
+[[steps]]
+building = "barracks"
+level = 3
+
+[[steps]]
+building = "barracks"
+level = 4
+
+[[steps]]
+building = "barracks"
+level = 5
+
+# Smithy to 5
+[[steps]]
+building = "smith"
+level = 2
+
+[[steps]]
+building = "smith"
+level = 3
+
+[[steps]]
+building = "smith"
+level = 4
+
+[[steps]]
+building = "smith"
+level = 5

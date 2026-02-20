@@ -1,0 +1,45 @@
+# Python
+__pycache__
+*.pyc
+*.pyo
+*.egg-info
+.eggs
+dist
+build
+.venv
+venv
+
+# Node
+dashboard/node_modules
+dashboard/.vite
+
+# IDE
+.vscode
+.idea
+*.swp
+*.swo
+
+# Git
+.git
+.gitignore
+
+# Data (profile-specific, mounted as PVC)
+data/
+logs/
+
+# Tests
+tests/
+
+# Dev files
+*.md
+.ruff_cache
+.pytest_cache
+.mypy_cache
+
+# Docker (prevent recursive copy)
+docker/
+Dockerfile
+.dockerignore
+
+# Helm
+helm/

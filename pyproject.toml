@@ -1,0 +1,45 @@
+[build-system]
+requires = ["hatchling"]
+build-backend = "hatchling.build"
+
+[project]
+name = "staemme"
+version = "1.0.0"
+description = "Die Stämme automation bot — cloud-native service"
+requires-python = ">=3.12"
+dependencies = [
+    "patchright>=0.1",
+    "selectolax>=0.3",
+    "beautifulsoup4>=4.12",
+    "sqlalchemy>=2.0",
+    "aiosqlite>=0.20",
+    "pydantic>=2.7",
+    "pydantic-settings>=2.3",
+    "apscheduler>=3.10",
+    "structlog>=24.1",
+    "plyer>=2.1",
+    "fastapi>=0.115",
+    "uvicorn[standard]>=0.34",
+    "websockets>=14.0",
+    "tomli>=2.0; python_version < '3.11'",
+]
+
+[project.optional-dependencies]
+dev = [
+    "pytest>=8.0",
+    "pytest-asyncio>=0.23",
+    "ruff>=0.4",
+]
+
+[project.scripts]
+staemme = "staemme.__main__:main"
+
+[tool.hatch.build.targets.wheel]
+packages = ["src/staemme"]
+
+[tool.ruff]
+line-length = 100
+
+[tool.pytest.ini_options]
+asyncio_mode = "auto"
+testpaths = ["tests"]
