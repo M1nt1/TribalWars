@@ -43,7 +43,7 @@ display:
 # -- Persistent storage for bot data (session, DB, build queues, toggles)
 persistence:
   enabled: true
-  storageClass: ""
+  storageClass: local-path
   size: 1Gi
   accessMode: ReadWriteOnce
 
