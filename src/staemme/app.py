@@ -4,6 +4,7 @@ from __future__ import annotations
 
 import asyncio
 import json
+import os
 import signal
 import time
 from datetime import datetime, time as dtime
@@ -42,7 +43,7 @@ from staemme.models.buildings import BuildStep
 
 log = get_logger("app")
 
-PROJECT_ROOT = Path(__file__).resolve().parent.parent.parent
+PROJECT_ROOT = Path(os.environ.get("STAEMME_ROOT", Path(__file__).resolve().parent.parent.parent))
 
 
 class Application:

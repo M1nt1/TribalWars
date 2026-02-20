@@ -89,6 +89,7 @@ trap shutdown SIGTERM SIGINT
 # ---------------------------------------------------------------------------
 echo "Starting Staemme bot (profile: ${PROFILE}, port: ${API_PORT})..."
 cd /app
+export STAEMME_ROOT=/app
 
 python -m staemme \
     --profile "${PROFILE}" \
