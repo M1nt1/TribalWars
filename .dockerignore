@@ -36,8 +36,9 @@ tests/
 .pytest_cache
 .mypy_cache
 
-# Docker (prevent recursive copy)
+# Docker (prevent recursive copy, but keep entrypoint)
 docker/
+!docker/entrypoint.sh
 Dockerfile
 .dockerignore
 
