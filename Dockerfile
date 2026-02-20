@@ -59,10 +59,11 @@ RUN groupadd -r staemme && useradd -r -g staemme -m -s /bin/bash staemme
 
 WORKDIR /app
 
-# Install Python dependencies first (cached layer)
+# Install build tool + dependencies (cached layer — only reruns when pyproject.toml changes)
 COPY pyproject.toml ./
-RUN pip install --no-cache-dir . && \
-    pip install --no-cache-dir hatchling
+RUN pip install --no-cache-dir hatchling && \
+    python -c "import tomllib; d=tomllib.loads(open('pyproject.toml').read()); print('\n'.join(d['project']['dependencies']))" \
+    | pip install --no-cache-dir -r /dev/stdin
 
 # Install patchright Chromium browser
 RUN patchright install chromium && \
@@ -71,9 +72,10 @@ RUN patchright install chromium && \
     cp -r /root/.cache/ms-playwright /home/staemme/.cache/ms-playwright && \
     chown -R staemme:staemme /home/staemme/.cache
 
-# Copy application source
+# Copy application source and install package (deps already cached above)
 COPY src/ ./src/
 COPY config/ ./config/
+RUN pip install --no-cache-dir --no-deps .
 
 # Copy dashboard build from stage 1
 COPY --from=dashboard-builder /build/dist ./dashboard/dist
