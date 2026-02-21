@@ -65,8 +65,10 @@ RUN pip install --no-cache-dir hatchling && \
     python -c "import tomllib; d=tomllib.loads(open('pyproject.toml').read()); print('\n'.join(d['project']['dependencies']))" \
     | pip install --no-cache-dir -r /dev/stdin
 
-# Install websockify (noVNC websocket proxy) and download noVNC web client
+# Install websockify (noVNC websocket proxy) without numpy (avoids CPU compat issues)
+# and download noVNC web client
 RUN pip install --no-cache-dir websockify && \
+    pip uninstall -y numpy 2>/dev/null; \
     curl -sL https://github.com/novnc/noVNC/archive/refs/tags/v1.5.0.tar.gz | tar xz -C /opt && \
     mv /opt/noVNC-1.5.0 /opt/novnc
 
