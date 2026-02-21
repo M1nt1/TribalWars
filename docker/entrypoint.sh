@@ -14,6 +14,8 @@ SCREEN_RESOLUTION="${SCREEN_RESOLUTION:-1280x720x24}"
 VNC_ENABLED="${VNC_ENABLED:-true}"
 VNC_PORT="${VNC_PORT:-5900}"
 VNC_PASSWORD="${VNC_PASSWORD:-}"
+NOVNC_ENABLED="${NOVNC_ENABLED:-true}"
+NOVNC_PORT="${NOVNC_PORT:-6080}"
 PROFILE="${PROFILE:-default}"
 API_PORT="${API_PORT:-8000}"
 
@@ -24,6 +26,7 @@ echo "Profile: ${PROFILE}"
 echo "Display: ${DISPLAY}"
 echo "Resolution: ${SCREEN_RESOLUTION}"
 echo "VNC: ${VNC_ENABLED}"
+echo "noVNC: ${NOVNC_ENABLED} (port ${NOVNC_PORT})"
 echo "API Port: ${API_PORT}"
 
 # ---------------------------------------------------------------------------
@@ -63,7 +66,17 @@ if [ "${VNC_ENABLED}" = "true" ]; then
 fi
 
 # ---------------------------------------------------------------------------
-# 3. Graceful shutdown handler
+# 3. Start noVNC (web-based VNC client via websockify)
+# ---------------------------------------------------------------------------
+if [ "${NOVNC_ENABLED}" = "true" ] && [ "${VNC_ENABLED}" = "true" ]; then
+    echo "Starting noVNC on port ${NOVNC_PORT}..."
+    websockify --web /opt/novnc ${NOVNC_PORT} localhost:${VNC_PORT} &
+    NOVNC_PID=$!
+    echo "noVNC started (PID: ${NOVNC_PID})"
+fi
+
+# ---------------------------------------------------------------------------
+# 4. Graceful shutdown handler
 # ---------------------------------------------------------------------------
 shutdown() {
     echo "Received shutdown signal..."
@@ -74,6 +87,7 @@ shutdown() {
 
     # Kill child processes
     [ -n "${BOT_PID}" ] && kill "${BOT_PID}" 2>/dev/null
+    [ -n "${NOVNC_PID}" ] && kill "${NOVNC_PID}" 2>/dev/null
     [ -n "${VNC_PID}" ] && kill "${VNC_PID}" 2>/dev/null
     [ -n "${XVFB_PID}" ] && kill "${XVFB_PID}" 2>/dev/null
 
@@ -85,7 +99,7 @@ shutdown() {
 trap shutdown SIGTERM SIGINT
 
 # ---------------------------------------------------------------------------
-# 4. Start the bot
+# 5. Start the bot
 # ---------------------------------------------------------------------------
 echo "Starting Staemme bot (profile: ${PROFILE}, port: ${API_PORT})..."
 cd /app
@@ -106,6 +120,7 @@ EXIT_CODE=$?
 echo "Bot exited with code ${EXIT_CODE}"
 
 # Cleanup
+[ -n "${NOVNC_PID}" ] && kill "${NOVNC_PID}" 2>/dev/null
 [ -n "${VNC_PID}" ] && kill "${VNC_PID}" 2>/dev/null
 [ -n "${XVFB_PID}" ] && kill "${XVFB_PID}" 2>/dev/null
 

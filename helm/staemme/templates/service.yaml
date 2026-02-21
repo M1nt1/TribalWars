@@ -20,6 +20,12 @@ spec:
       targetPort: vnc
       protocol: TCP
     {{- end }}
+    {{- if $.Values.novnc.enabled }}
+    - name: novnc
+      port: {{ $.Values.service.novncPort }}
+      targetPort: novnc
+      protocol: TCP
+    {{- end }}
   selector:
     {{- include "staemme.selectorLabels" $ | nindent 4 }}
     staemme/profile: {{ $profile.name }}

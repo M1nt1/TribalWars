@@ -35,6 +35,11 @@ vnc:
   # -- VNC password (empty = no auth)
   password: ""
 
+# -- noVNC web-based remote access (browser-based VNC via websockify)
+novnc:
+  enabled: true
+  port: 6080
+
 # -- Xvfb virtual display settings
 display:
   number: 99
@@ -53,6 +58,7 @@ service:
   port: 8000
   # -- Additional ports to expose on the service
   vncPort: 5900
+  novncPort: 6080
 
 # -- Ingress for web dashboard + API access
 ingress:

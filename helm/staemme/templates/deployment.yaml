@@ -49,6 +49,11 @@ spec:
               containerPort: {{ $.Values.vnc.port }}
               protocol: TCP
             {{- end }}
+            {{- if $.Values.novnc.enabled }}
+            - name: novnc
+              containerPort: {{ $.Values.novnc.port }}
+              protocol: TCP
+            {{- end }}
           env:
             - name: PROFILE
               value: {{ $profile.name | quote }}
@@ -66,6 +71,10 @@ spec:
             - name: VNC_PASSWORD
               value: {{ $.Values.vnc.password | quote }}
             {{- end }}
+            - name: NOVNC_ENABLED
+              value: {{ $.Values.novnc.enabled | quote }}
+            - name: NOVNC_PORT
+              value: {{ $.Values.novnc.port | quote }}
             {{- if and $profile.credentials $profile.credentials.username }}
             - name: GAME_USERNAME
               valueFrom:

@@ -65,6 +65,11 @@ RUN pip install --no-cache-dir hatchling && \
     python -c "import tomllib; d=tomllib.loads(open('pyproject.toml').read()); print('\n'.join(d['project']['dependencies']))" \
     | pip install --no-cache-dir -r /dev/stdin
 
+# Install websockify (noVNC websocket proxy) and download noVNC web client
+RUN pip install --no-cache-dir websockify && \
+    curl -sL https://github.com/novnc/noVNC/archive/refs/tags/v1.5.0.tar.gz | tar xz -C /opt && \
+    mv /opt/noVNC-1.5.0 /opt/novnc
+
 # Install patchright Chromium browser
 RUN patchright install chromium && \
     # Move browser to a shared location accessible by staemme user
