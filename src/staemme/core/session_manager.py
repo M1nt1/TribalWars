@@ -4,7 +4,7 @@ from __future__ import annotations
 
 from pathlib import Path
 
-from staemme.core.browser_client import BrowserClient, GAME_URL_PATTERN
+from staemme.core.browser_client import BrowserClient
 from staemme.core.logging import get_logger
 
 log = get_logger("session")
@@ -45,7 +45,7 @@ class SessionManager:
                 f"{self.base_url}/game.php", wait_until="domcontentloaded"
             )
             url = self.browser.page.url or ""
-            valid = GAME_URL_PATTERN in url
+            valid = self.browser._is_game_url(url)
             if valid:
                 log.info("session_valid", url=url)
             else:

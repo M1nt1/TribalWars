@@ -38,7 +38,7 @@ vnc:
 # -- Xvfb virtual display settings
 display:
   number: 99
-  resolution: "1280x720x24"
+  resolution: "1920x1080x24"
 
 # -- Persistent storage for bot data (session, DB, build queues, toggles)
 persistence:
@@ -86,8 +86,8 @@ botConfig: |
 
   [browser]
   headless_mode = "xvfb"
-  viewport_width = 1280
-  viewport_height = 720
+  viewport_width = 1920
+  viewport_height = 1080
 
   [api]
   enabled = true

@@ -27,8 +27,20 @@ if TYPE_CHECKING:
 
 log = get_logger("browser")
 
-LOGIN_URL = "https://www.die-staemme.de"
-GAME_URL_PATTERN = "die-staemme.de/game.php"
+# Domain mapping: world prefix → (login URL, game domain)
+DOMAIN_MAP = {
+    "de": ("https://www.die-staemme.de", "die-staemme.de"),
+    "en": ("https://www.tribalwars.net", "tribalwars.net"),
+    "nl": ("https://www.tribalwars.nl", "tribalwars.nl"),
+    "pl": ("https://www.plemiona.pl", "plemiona.pl"),
+}
+DEFAULT_DOMAIN = ("https://www.die-staemme.de", "die-staemme.de")
+
+
+def _domain_for_world(world: str) -> tuple[str, str]:
+    """Return (login_url, game_domain) for a world like 'en153' or 'de250'."""
+    prefix = "".join(c for c in world if c.isalpha())
+    return DOMAIN_MAP.get(prefix, DEFAULT_DOMAIN)
 
 CSRF_PATTERN = re.compile(r"csrf['\"]?\s*[:=]\s*['\"]([a-f0-9]+)['\"]", re.IGNORECASE)
 H_PARAM_PATTERN = re.compile(r"[?&]h=([a-f0-9]+)", re.IGNORECASE)
@@ -69,6 +81,10 @@ class BrowserClient:
         self.h_param: str = ""
         self._panel_injector: Any = None  # set by SidePanel after init
         self._bot_monitor: Any = None  # set by App after init
+
+    def _is_game_url(self, url: str) -> bool:
+        """Check if a URL is a game page on any supported domain."""
+        return any(f"{d[1]}/game.php" in url for d in DOMAIN_MAP.values())
 
     @property
     def page(self) -> Page:
@@ -154,17 +170,19 @@ class BrowserClient:
     # Login
     # ------------------------------------------------------------------
 
-    async def navigate_to_login(self) -> None:
+    async def navigate_to_login(self, world: str = "") -> None:
         """Navigate to the login page."""
-        await self.page.goto(LOGIN_URL, wait_until="domcontentloaded")
-        log.info("navigated_to_login")
+        login_url, _ = _domain_for_world(world or self.world or "de")
+        await self.page.goto(login_url, wait_until="domcontentloaded")
+        log.info("navigated_to_login", url=login_url)
 
     async def wait_for_game_page(self, timeout: float = 300) -> str:
         """Wait until user completes login. Returns world identifier."""
         log.info("waiting_for_login", timeout_seconds=timeout)
+        game_domains = [d[1] for d in DOMAIN_MAP.values()]
         for _ in range(int(timeout)):
             current_url = self.page.url or ""
-            if GAME_URL_PATTERN in current_url:
+            if any(f"{d}/game.php" in current_url for d in game_domains):
                 break
             await asyncio.sleep(1)
         else:
@@ -172,7 +190,8 @@ class BrowserClient:
 
         url = self.page.url
         self.world = url.split("//")[1].split(".")[0] if "//" in url else ""
-        self.base_url = f"https://{self.world}.die-staemme.de"
+        _, game_domain = _domain_for_world(self.world)
+        self.base_url = f"https://{self.world}.{game_domain}"
         log.info("login_complete", world=self.world, url=url)
 
         # Extract initial tokens from the landing page
@@ -236,7 +255,7 @@ class BrowserClient:
             """Re-inject panel after any page load (bot or user-initiated)."""
             try:
                 url = self.page.url or ""
-                if GAME_URL_PATTERN in url and self._panel_injector:
+                if self._is_game_url(url) and self._panel_injector:
                     await self._panel_injector()
             except Exception:
                 pass
@@ -248,7 +267,8 @@ class BrowserClient:
         url = self.page.url or ""
         if "bot_check" in url or "captcha" in url.lower():
             raise CaptchaRequiredError("Captcha page detected")
-        if GAME_URL_PATTERN not in url and self.base_url and "die-staemme.de" in url:
+        _, game_domain = _domain_for_world(self.world or "de")
+        if f"{game_domain}/game.php" not in url and self.base_url and game_domain in url:
             raise SessionExpiredError(f"Redirected away from game: {url}")
 
     async def dismiss_popups(self) -> None:
@@ -386,7 +406,7 @@ class BrowserClient:
         """Wait for the user to solve a captcha and return to game page."""
         for _ in range(int(timeout)):
             current_url = self.page.url or ""
-            if GAME_URL_PATTERN in current_url and "bot_check" not in current_url:
+            if self._is_game_url(current_url) and "bot_check" not in current_url:
                 await self.save_session()
                 return True
             await asyncio.sleep(1)

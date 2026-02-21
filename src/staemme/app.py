@@ -202,7 +202,9 @@ class Application:
         storage_path = self.data_dir / "session" / "storage_state.json"
         if storage_path.exists() and self.browser.base_url == "":
             self.browser.world = self.config.server.world
-            self.browser.base_url = f"https://{self.config.server.world}.die-staemme.de"
+            from staemme.core.browser_client import _domain_for_world
+            _, game_domain = _domain_for_world(self.config.server.world)
+            self.browser.base_url = f"https://{self.config.server.world}.{game_domain}"
 
         if self.browser.base_url:
             valid = await self.session.validate_session()
