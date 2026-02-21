@@ -199,11 +199,13 @@ class Application:
 
     async def _login(self) -> None:
         """Handle login -- try restoring session, fall back to manual login."""
+        from staemme.core.browser_client import _domain_for_world
+        # Always set world so login navigates to the correct domain
+        self.browser.world = self.config.server.world
+        _, game_domain = _domain_for_world(self.config.server.world)
+
         storage_path = self.data_dir / "session" / "storage_state.json"
         if storage_path.exists() and self.browser.base_url == "":
-            self.browser.world = self.config.server.world
-            from staemme.core.browser_client import _domain_for_world
-            _, game_domain = _domain_for_world(self.config.server.world)
             self.browser.base_url = f"https://{self.config.server.world}.{game_domain}"
 
         if self.browser.base_url:
