@@ -117,7 +117,7 @@ livenessProbe:
   httpGet:
     path: /api/health
     port: api
-  initialDelaySeconds: 60
+  initialDelaySeconds: 3600
   periodSeconds: 30
   timeoutSeconds: 5
   failureThreshold: 3
@@ -127,7 +127,7 @@ readinessProbe:
   httpGet:
     path: /api/health
     port: api
-  initialDelaySeconds: 30
+  initialDelaySeconds: 3600
   periodSeconds: 10
   timeoutSeconds: 5
   failureThreshold: 3

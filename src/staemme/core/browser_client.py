@@ -176,7 +176,7 @@ class BrowserClient:
         await self.page.goto(login_url, wait_until="domcontentloaded")
         log.info("navigated_to_login", url=login_url)
 
-    async def wait_for_game_page(self, timeout: float = 300) -> str:
+    async def wait_for_game_page(self, timeout: float = 3600) -> str:
         """Wait until user completes login. Returns world identifier."""
         log.info("waiting_for_login", timeout_seconds=timeout)
         game_domains = [d[1] for d in DOMAIN_MAP.values()]
